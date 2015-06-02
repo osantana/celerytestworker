@@ -1,0 +1,12 @@
+language: python
+python:
+  - 2.7
+  - 3.4
+  - pypy
+install:
+  - pip install coveralls
+  - python setup.py -q install
+script:
+  nosetests --with-coverage --cover-package=celerytestworker
+after_success:
+  - coveralls
