@@ -71,10 +71,10 @@ class CeleryTestWorker(multiprocessing.Process):
             scheduled = inspect.scheduled()
             active = inspect.active()
 
-            if hostname in scheduled:
+            if scheduled and hostname in scheduled:
                 pending_tasks.extend(scheduled[hostname])
 
-            if hostname in active:
+            if active and hostname in active:
                 pending_tasks.extend(active[hostname])
 
             if not pending_tasks:

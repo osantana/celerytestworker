@@ -1,3 +1,8 @@
+0.0.3
+=====
+
+  - Fix another bug related with returns of inspect.* on terminate. Sometime they returns None instead of dict()
+
 0.0.2
 =====
 
