@@ -14,6 +14,15 @@ if sys.version_info >= (3, 0):
     basestring = str
 
 
+RETRY_INTERVAL = 0.3  # seconds
+
+
+class TerminateTimeout(Exception):
+    def __init__(self, pending_tasks, *args, **kwargs):
+        self.pending_tasks = pending_tasks
+        super(TerminateTimeout, self).__init__(*args, **kwargs)
+
+
 # noinspection PyUnusedLocal
 class CeleryTestWorker(multiprocessing.Process):
     def __init__(self, app, purge=True, log=False):
@@ -47,17 +56,36 @@ class CeleryTestWorker(multiprocessing.Process):
         worker.wait()
         return worker
 
-    def terminate(self):
+    def terminate(self, timeout=3):
         inspect = self.app.control.inspect()
         hostname = self.worker.hostname
 
         self.app.finalize()
         self.worker.stop()
 
-        while inspect.scheduled()[hostname] or inspect.active()[hostname]:
-            time.sleep(.3)
+        pending_tasks = []
+        retries = 0
+        max_retries = int(round(timeout / RETRY_INTERVAL, 0))
+        while retries < max_retries:
+            pending_tasks = []
+            scheduled = inspect.scheduled()
+            active = inspect.active()
 
-        super(CeleryTestWorker, self).terminate()
+            if hostname in scheduled:
+                pending_tasks.extend(scheduled[hostname])
+
+            if hostname in active:
+                pending_tasks.extend(active[hostname])
+
+            if not pending_tasks:
+                break
+
+            retries += 1
+            time.sleep(RETRY_INTERVAL)
+        else:
+            raise TerminateTimeout(pending_tasks)
+
+        return super(CeleryTestWorker, self).terminate()
 
     def __enter__(self):
         self.start()
