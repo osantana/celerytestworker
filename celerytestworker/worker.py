@@ -50,8 +50,8 @@ class CeleryTestWorker(multiprocessing.Process):
         self.worker.start()
 
     @classmethod
-    def create(cls, app):
-        worker = cls(app)
+    def create(cls, app, purge=True, log=False):
+        worker = cls(app, purge, log)
         worker.start()
         worker.wait()
         return worker
@@ -94,3 +94,4 @@ class CeleryTestWorker(multiprocessing.Process):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.terminate()
+
